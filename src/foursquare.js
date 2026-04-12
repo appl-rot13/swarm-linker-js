@@ -43,6 +43,10 @@ function getVenueAddress(formattedAddress) {
 export async function createTweetText(env, checkinId) {
 	const data = await getCheckinDetails(env, checkinId);
 	const checkin = data.response.checkin;
+	if (!checkin) {
+		// If check-in details cannot be fetched.
+		return "";
+	}
 
 	// Please comment out if you want to posts all check-ins.
 	if (!checkin.shares?.twitter) {

@@ -49,6 +49,7 @@ async function handleWebhook(request, env, ctx) {
 
 	const checkinText = formData.get("checkin");
 	if (!checkinText) {
+		// The webhook may be triggered not only by check-ins.
 		return new Response("OK");
 	}
 
@@ -63,6 +64,7 @@ async function handleWebhook(request, env, ctx) {
 async function tweetCheckin(env, checkinId) {
 	const tweetText = await foursquare.createTweetText(env, checkinId);
 	if (!tweetText) {
+		// Empty string if Twitter sharing is disabled.
 		return;
 	}
 
