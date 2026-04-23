@@ -2,6 +2,8 @@
 
 # Swarm Linker
 
+[![GitHub Actions](../../actions/workflows/test.yml/badge.svg)](../../actions)
+
 An application that posts check-ins on Swarm to X (Twitter).
 
 ## Overview

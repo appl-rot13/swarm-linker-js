@@ -2,6 +2,8 @@
 
 # Swarm Linker
 
+[![GitHub Actions](../../actions/workflows/test.yml/badge.svg)](../../actions)
+
 SwarmでのチェックインをX(Twitter)に投稿するアプリケーション。
 
 ## 概要
