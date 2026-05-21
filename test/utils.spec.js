@@ -1,10 +1,12 @@
 import { describe, it, expect } from "vitest";
-import * as utils from "../src/utils.js";
+import { isPostalCode } from "../src/utils.js";
 
-describe("isZipCode", () => {
-	describe("valid cases", () => {
-		it("returns true for standard zip codes", () => {
-			expect(utils.isZipCode("123-4567")).toBe(true);
-		});
+describe("isPostalCode", () => {
+	it.each([
+		{ str: "123-4567", expected: true },
+		{ str: "1234567", expected: false },
+		{ str: "", expected: false },
+	])("returns $expected when the string is $str", ({ str, expected }) => {
+		expect(isPostalCode(str)).toBe(expected);
 	});
 });

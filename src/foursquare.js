@@ -33,7 +33,7 @@ export async function getCheckinDetails(env, checkinId) {
 
 function getVenueAddress(formattedAddress) {
 	const venueAddress = formattedAddress.at(-1);
-	if (utils.isZipCode(venueAddress)) {
+	if (utils.isPostalCode(venueAddress)) {
 		return formattedAddress.at(-2);
 	}
 
