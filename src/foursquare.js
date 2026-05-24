@@ -40,6 +40,30 @@ function getVenueAddress(formattedAddress) {
 	return venueAddress;
 }
 
+function getVenueLocationText(location) {
+	const { city, state, formattedAddress } = location;
+
+	if (city && state) {
+		return ` in ${city}, ${state}`;
+	}
+
+	if (formattedAddress?.length) {
+		const venueAddress = getVenueAddress(formattedAddress);
+		return ` in ${venueAddress}`;
+	}
+
+	if (state) {
+		return ` in ${state}`;
+	}
+
+	// This case may not be necessary...
+	if (city) {
+		return ` in ${city}`;
+	}
+
+	return "";
+}
+
 export async function createTweetText(env, checkinId) {
 	const data = await getCheckinDetails(env, checkinId);
 	const checkin = data.response.checkin;
@@ -55,8 +79,8 @@ export async function createTweetText(env, checkinId) {
 
 	const venue = checkin.venue;
 	const venueName = venue.name;
-	const venueAddress = getVenueAddress(venue.location.formattedAddress);
+	const venueLocation = getVenueLocationText(venue.location);
 	const shareUrl = checkin.checkinShortUrl;
 
-	return `I'm at ${venueName} in ${venueAddress}\n` + shareUrl;
+	return `I'm at ${venueName}${venueLocation}\n` + shareUrl;
 }

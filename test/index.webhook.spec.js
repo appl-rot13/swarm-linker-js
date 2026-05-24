@@ -10,15 +10,50 @@ describe("POST /webhook", () => {
 	describe("when a check-in should be posted", () => {
 		it.each([
 			{
-				case: "contains a postal code",
+				case: "the city and state are available",
+				expected: "I'm at <Venue Name> in <City>, <State>\n<URL>",
 			},
 			{
-				case: "does not contain a postal code",
+				case: "the formatted address contains a postal code",
 				modifier: (response) => {
+					delete response.checkin.venue.location.city;
+				},
+				expected: "I'm at <Venue Name> in <Address>\n<URL>",
+			},
+			{
+				case: "the formatted address does not contain a postal code",
+				modifier: (response) => {
+					delete response.checkin.venue.location.state;
 					response.checkin.venue.location.formattedAddress.pop();
 				},
+				expected: "I'm at <Venue Name> in <Address>\n<URL>",
 			},
-		])("formats the posted text when the formatted address $case", async ({ modifier }) => {
+			{
+				case: "only the state is available",
+				modifier: (response) => {
+					delete response.checkin.venue.location.city;
+					response.checkin.venue.location.formattedAddress = [];
+				},
+				expected: "I'm at <Venue Name> in <State>\n<URL>",
+			},
+			{
+				case: "only the city is available",
+				modifier: (response) => {
+					delete response.checkin.venue.location.state;
+					delete response.checkin.venue.location.formattedAddress;
+				},
+				expected: "I'm at <Venue Name> in <City>\n<URL>",
+			},
+			{
+				case: "no location data is available",
+				modifier: (response) => {
+					delete response.checkin.venue.location.city;
+					delete response.checkin.venue.location.state;
+					delete response.checkin.venue.location.formattedAddress;
+				},
+				expected: "I'm at <Venue Name>\n<URL>",
+			},
+		])("formats the posted text when $case", async ({ modifier, expected }) => {
 			const { fetchMock, response } = await runFetchWorker({ modifier });
 
 			expect(response.status).toBe(200);
@@ -35,7 +70,7 @@ describe("POST /webhook", () => {
 			expect(tweetRequest.method).toBe("POST");
 			expect(tweetRequest.headers.Authorization).toContain("OAuth");
 			expect(JSON.parse(tweetRequest.body)).toEqual({
-				text: "I'm at <Venue Name> in <Address>\n<URL>",
+				text: expected,
 			});
 		});
 	});
@@ -150,6 +185,8 @@ function createCheckinDetailsResponse(modifier) {
 			venue: {
 				name: "<Venue Name>",
 				location: {
+					city: "<City>",
+					state: "<State>",
 					formattedAddress: ["", "<Address>", "123-4567"],
 				},
 			},
