@@ -78,24 +78,6 @@ describe("POST /webhook", () => {
 	describe("when posting should be skipped", () => {
 		it.each([
 			{
-				case: "twitter sharing is disabled",
-				modifier: (response) => {
-					response.checkin.shares.twitter = false;
-				},
-			},
-			{
-				case: "twitter sharing is missing",
-				modifier: (response) => {
-					delete response.checkin.shares.twitter;
-				},
-			},
-			{
-				case: "sharing is missing",
-				modifier: (response) => {
-					delete response.checkin.shares;
-				},
-			},
-			{
 				case: "check-in details cannot be fetched",
 				modifier: (response) => {
 					delete response.checkin;
@@ -111,6 +93,36 @@ describe("POST /webhook", () => {
 
 			const [checkinUrl] = fetchMock.mock.calls[0];
 			expectUrl(checkinUrl, "https://api.foursquare.com", "/v2/checkins/checkin_id");
+		});
+	});
+
+	describe("when posting should not be skipped", () => {
+		it.each([
+			{
+				case: "twitter sharing is disabled",
+				modifier: (response) => {
+					response.checkin.shares = { twitter: false };
+				},
+			},
+			{
+				case: "twitter sharing is not specified",
+				modifier: (response) => {
+					response.checkin.shares = {};
+				},
+			},
+		])("does not skip posting when $case", async ({ modifier }) => {
+			const { fetchMock, response } = await runFetchWorker({ modifier });
+
+			expect(response.status).toBe(200);
+			expect(await response.text()).toBe("OK");
+
+			expect(fetchMock).toHaveBeenCalledTimes(2);
+
+			const [checkinUrl] = fetchMock.mock.calls[0];
+			expectUrl(checkinUrl, "https://api.foursquare.com", "/v2/checkins/checkin_id");
+
+			const [tweetUrl] = fetchMock.mock.calls[1];
+			expectUrl(tweetUrl, "https://api.x.com", "/2/tweets");
 		});
 	});
 
@@ -181,7 +193,6 @@ function createPostRequest(url, params = {}) {
 function createCheckinDetailsResponse(modifier) {
 	const response = {
 		checkin: {
-			shares: { twitter: true },
 			venue: {
 				name: "<Venue Name>",
 				location: {

@@ -72,10 +72,10 @@ export async function createTweetText(env, checkinId) {
 		return "";
 	}
 
-	// Please comment out if you want to posts all check-ins.
-	if (!checkin.shares?.twitter) {
-		return "";
-	}
+	// Sharing settings have been removed from the Swarm app, so all check-ins are currently posted.
+	// if (!checkin.shares?.twitter) {
+	// 	return "";
+	// }
 
 	const venue = checkin.venue;
 	const venueName = venue.name;
