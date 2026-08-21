@@ -13,8 +13,8 @@
     "oauth-1.0a": "^2.2.6"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.21.1",
-    "vitest": "~4.1.10",
+    "@cloudflare/vitest-pool-workers": "^0.22.0",
+    "vitest": "~4.1.11",
     "wrangler": "^4.92.0"
   }
 }
