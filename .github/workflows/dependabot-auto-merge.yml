@@ -19,8 +19,18 @@ jobs:
 
       - name: Auto merge
         if: |
-          steps.metadata.outputs.package-ecosystem == 'npm_and_yarn' &&
-          steps.metadata.outputs.dependency-group == 'dev-dependencies'
+          (
+            steps.metadata.outputs.package-ecosystem == 'github_actions' &&
+            steps.metadata.outputs.dependency-group == 'codeql-actions' &&
+            (
+              steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+              steps.metadata.outputs.update-type == 'version-update:semver-minor'
+            )
+          ) ||
+          (
+            steps.metadata.outputs.package-ecosystem == 'npm_and_yarn' &&
+            steps.metadata.outputs.dependency-group == 'dev-dependencies'
+          )
         run: gh pr merge --auto --merge "${{ github.event.pull_request.html_url }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
