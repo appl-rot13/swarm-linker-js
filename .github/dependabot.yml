@@ -24,3 +24,7 @@ updates:
         update-types:
           - minor
           - patch
+    ignore:
+      - dependency-name: "vitest"
+        update-types:
+          - version-update:semver-major
