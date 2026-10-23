@@ -20,7 +20,7 @@ describe("GET /oauth", () => {
 			"https://foursquare.com",
 			"/oauth2/authenticate",
 			{
-				client_id: "TEST_API_KEY",
+				client_id: "TEST_FOURSQUARE_API_KEY",
 				response_type: "code",
 				redirect_uri: "http://example.com/oauth/callback",
 			},
