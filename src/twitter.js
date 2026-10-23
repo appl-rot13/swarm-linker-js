@@ -38,3 +38,11 @@ async function apiRequest(oauth, oauthToken, endpoint, body) {
 
 	return response.json();
 }
+
+export function getIntentUrl(text, url) {
+	return (
+		`intent://x.com/intent/tweet` +
+		`?text=${encodeURIComponent(text + url)}` +
+		`#Intent;scheme=https;package=com.twitter.android;end`
+	);
+}
