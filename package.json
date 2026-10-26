@@ -2,7 +2,6 @@
   "name": "swarm-linker-js",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
   "scripts": {
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
@@ -13,8 +12,8 @@
     "oauth-1.0a": "^2.2.6"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.22.0",
-    "vitest": "~4.1.11",
-    "wrangler": "^4.130.0"
+    "@cloudflare/vitest-plugin": "^1.4.3",
+    "vitest": "~5.0.3",
+    "wrangler": "^4.164.0"
   }
 }
