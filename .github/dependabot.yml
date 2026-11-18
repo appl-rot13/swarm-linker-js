@@ -20,7 +20,7 @@ updates:
         patterns:
           - "wrangler"
           - "vitest"
-          - "@cloudflare/vitest-pool-workers"
+          - "@cloudflare/vitest-plugin"
         update-types:
           - minor
           - patch
