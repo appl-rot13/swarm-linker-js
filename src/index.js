@@ -16,6 +16,16 @@ export default {
 					return await handleWebhook(request, env, ctx);
 			}
 
+			if (env.ENDPOINT_ACCESS_TOKEN) {
+				switch (url.pathname) {
+					case `/${env.ENDPOINT_ACCESS_TOKEN}/tweet`:
+						return await tweetCheckin(env);
+
+					case `/${env.ENDPOINT_ACCESS_TOKEN}/tweet/latest`:
+						return await tweetLatestCheckin(env);
+				}
+			}
+
 			return new Response("Not Found", { status: 404 });
 		} catch (err) {
 			console.error("Unhandled error:", err);
@@ -34,7 +44,11 @@ async function handleAuthorizationCallback(url, env) {
 		return new Response("Forbidden", { status: 403 });
 	}
 
-	const accessToken = await foursquare.getAccessToken(env, code);
+	const accessToken = await foursquare.fetchAccessToken(env, code);
+	if (!accessToken) {
+		return new Response("Bad Gateway", { status: 502 });
+	}
+
 	return new Response(`Save the access token "${accessToken}" in Secrets.`);
 }
 
@@ -54,19 +68,53 @@ async function handleWebhook(request, env, ctx) {
 	}
 
 	const checkin = JSON.parse(checkinText);
-	ctx.waitUntil(tweetCheckin(env, checkin.id).catch(err => {
+	ctx.waitUntil(shareCheckin(env, checkin.id).catch(err => {
 		console.error("Unhandled error:", err);
 	}));
 
 	return new Response("OK");
 }
 
-async function tweetCheckin(env, checkinId) {
-	const tweetText = await foursquare.createTweetText(env, checkinId);
-	if (!tweetText) {
-		// Empty string if Twitter sharing is disabled.
+async function shareCheckin(env, checkinId) {
+	if (!await foursquare.refreshCachedCheckinById(env, checkinId)) {
 		return;
 	}
 
-	console.log(await twitter.tweet(env, tweetText));
+	if (isAutoTweetEnabled(env)) {
+		const { text, url } = await foursquare.createShareContents(env);
+		if (!text) {
+			return;
+		}
+
+		console.log(await twitter.tweet(env, text + url));
+	}
+
+	// Add posting to social media platforms here as needed.
+}
+
+async function tweetCheckin(env) {
+	const { text, url } = await foursquare.createShareContents(env);
+	if (!text) {
+		return new Response(null, { status: 204 });
+	}
+
+	return Response.redirect(twitter.getIntentUrl(text, url), 302);
+}
+
+async function tweetLatestCheckin(env) {
+	if (!await foursquare.refreshCachedCheckin(env)) {
+		return new Response(null, { status: 204 });
+	}
+
+	return await tweetCheckin(env);
+}
+
+function isAutoTweetEnabled(env) {
+	return (
+		env.AUTO_TWEET_ENABLED === "true" &&
+		Boolean(env.TWITTER_API_KEY) &&
+		Boolean(env.TWITTER_API_KEY_SECRET) &&
+		Boolean(env.TWITTER_ACCESS_TOKEN) &&
+		Boolean(env.TWITTER_ACCESS_TOKEN_SECRET)
+	);
 }

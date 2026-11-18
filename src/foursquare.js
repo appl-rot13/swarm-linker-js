@@ -9,7 +9,7 @@ export function initiateAuthorization(env) {
 		302);
 }
 
-export async function getAccessToken(env, code) {
+export async function fetchAccessToken(env, code) {
 	const response = await fetch(
 		`https://foursquare.com/oauth2/access_token` +
 		`?client_id=${env.FOURSQUARE_API_KEY}` +
@@ -19,16 +19,66 @@ export async function getAccessToken(env, code) {
 		`&code=${code}`);
 
 	const data = await response.json();
-	return data.access_token;
+	return data?.access_token ?? null;
 }
 
-export async function getCheckinDetails(env, checkinId) {
+export async function fetchCheckinDetails(env, checkinId) {
 	const response = await fetch(
 		`https://api.foursquare.com/v2/checkins/${checkinId}` +
 		`?v=${env.FOURSQUARE_API_VERSION}` +
 		`&oauth_token=${env.FOURSQUARE_ACCESS_TOKEN}`);
 
-	return await response.json();
+	const data = await response.json();
+	return data?.response?.checkin ?? null;
+}
+
+export async function fetchUserCheckins(env, limit, offset) {
+	const response = await fetch(
+		`https://api.foursquare.com/v2/users/self/checkins` +
+		`?v=${env.FOURSQUARE_API_VERSION}` +
+		`&limit=${limit}` +
+		`&offset=${offset}` +
+		`&oauth_token=${env.FOURSQUARE_ACCESS_TOKEN}`);
+
+	const data = await response.json();
+	return data?.response?.checkins?.items ?? [];
+}
+
+async function getCachedCheckin(env) {
+	return await env.KV.get("LatestCheckin", "json");
+}
+
+async function setCachedCheckin(env, checkin) {
+	await env.KV.put("LatestCheckin", JSON.stringify(checkin));
+}
+
+async function fetchLatestCheckinId(env) {
+	const checkins = await fetchUserCheckins(env, 1, 0);
+	return checkins?.[0]?.id;
+}
+
+export async function refreshCachedCheckin(env) {
+	const latestCheckinId = await fetchLatestCheckinId(env);
+	if (!latestCheckinId) {
+		return false;
+	}
+
+	const cachedCheckin = await getCachedCheckin(env);
+	if (cachedCheckin?.id === latestCheckinId) {
+		return true;
+	}
+
+	return await refreshCachedCheckinById(env, latestCheckinId);
+}
+
+export async function refreshCachedCheckinById(env, checkinId) {
+	const checkin = await fetchCheckinDetails(env, checkinId);
+	if (!checkin) {
+		return false;
+	}
+
+	await setCachedCheckin(env, checkin);
+	return true;
 }
 
 function getVenueAddress(formattedAddress) {
@@ -64,23 +114,19 @@ function getVenueLocationText(location) {
 	return "";
 }
 
-export async function createTweetText(env, checkinId) {
-	const data = await getCheckinDetails(env, checkinId);
-	const checkin = data.response.checkin;
+export async function createShareContents(env) {
+	const checkin = await getCachedCheckin(env);
 	if (!checkin) {
-		// If check-in details cannot be fetched.
-		return "";
+		return {};
 	}
-
-	// Sharing settings have been removed from the Swarm app, so all check-ins are currently posted.
-	// if (!checkin.shares?.twitter) {
-	// 	return "";
-	// }
 
 	const venue = checkin.venue;
 	const venueName = venue.name;
 	const venueLocation = getVenueLocationText(venue.location);
 	const shareUrl = checkin.checkinShortUrl;
 
-	return `I'm at ${venueName}${venueLocation}\n` + shareUrl;
+	return {
+		text: `I'm at ${venueName}${venueLocation}\n`,
+		url: shareUrl,
+	};
 }
